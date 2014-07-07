@@ -3,7 +3,7 @@
 
     <string name="app_name">RSS</string>
     <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_settings">Update</string>
     <string name="title_activity_description">DescriptionActivity</string>
 
 </resources>

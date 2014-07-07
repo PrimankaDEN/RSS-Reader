@@ -15,6 +15,9 @@ import android.content.Intent;
 import android.content.Loader;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -25,7 +28,6 @@ import android.widget.ProgressBar;
 @SuppressLint("NewApi")
 public class MainActivity extends Activity implements
 		LoaderManager.LoaderCallbacks<Bundle> {
-	private final int PARSE_PAR = -500;
 	private final int LOADER_ID = 500;
 	private final String IS_LOADED_TAG = "isLoaded";
 	private final String SAVE_RSS_TAG = "saving";
@@ -39,6 +41,7 @@ public class MainActivity extends Activity implements
 	private ProgressBar progressBar;
 	private String rssFeed;
 	private int parsingArgument;
+	private Handler rssFeedHandler = new Handler();
 
 	@Override
 	public Loader<Bundle> onCreateLoader(int arg0, Bundle arg1) {
@@ -51,9 +54,7 @@ public class MainActivity extends Activity implements
 	@Override
 	public void onLoadFinished(Loader<Bundle> arg0, Bundle result) {
 		rssFeed = result.getString(RSSLoader.URL_TAG, "");
-		parsingArgument = PARSE_PAR;
-		Handler handler = new Handler();
-		handler.post(getTitleList);
+		rssFeedHandler.post(getTitleList);
 	}
 
 	@Override
@@ -61,8 +62,11 @@ public class MainActivity extends Activity implements
 
 	}
 
-	public interface CallBack {
-		public void setDescription(String data);
+	private void update() {
+		progressBar.setVisibility(View.VISIBLE);
+		getLoaderManager().initLoader(LOADER_ID, null, MainActivity.this)
+				.forceLoad();
+		rssFeedHandler.post(getTitleList);
 	}
 
 	@Override
@@ -78,8 +82,7 @@ public class MainActivity extends Activity implements
 			getLoaderManager().initLoader(LOADER_ID, null, MainActivity.this)
 					.forceLoad();
 		else {
-			parsingArgument = PARSE_PAR;
-			new Thread(getTitleList).start();
+			rssFeedHandler.post(getTitleList);
 		}
 
 		progressBar = (ProgressBar) findViewById(R.id.progressBar);
@@ -92,7 +95,7 @@ public class MainActivity extends Activity implements
 					int position, long id) {
 				progressBar.setVisibility(View.VISIBLE);
 				parsingArgument = position;
-				new Thread(getDescription).start();
+				rssFeedHandler.post(getDescription);
 			}
 
 		};
@@ -109,33 +112,31 @@ public class MainActivity extends Activity implements
 				XmlPullParser xpp = factory.newPullParser();
 				xpp.setInput(new StringReader(rssFeed));
 
-				if (parsingArgument == PARSE_PAR) {
-					ArrayList<String> item = new ArrayList<String>();
-					ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-							MainActivity.this,
-							android.R.layout.simple_list_item_1, item);
-					adapter.notifyDataSetChanged();
-
-					while (xpp.getEventType() != XmlPullParser.END_DOCUMENT) {
-						if (xpp.getEventType() == XmlPullParser.START_TAG)
-							if (xpp.getName().equals(ITEM)) {
-								while (xpp.getEventType() != XmlPullParser.END_DOCUMENT) {
-									if (xpp.getEventType() == XmlPullParser.START_TAG)
-										if (xpp.getName().equals(TITLE)) {
-											while (xpp.getEventType() != XmlPullParser.TEXT)
-												xpp.next();
-											item.add(xpp.getText());
-											break;
-										}
-									xpp.next();
-								}
+				ArrayList<String> item = new ArrayList<String>();
+				ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+						MainActivity.this, android.R.layout.simple_list_item_1,
+						item);
+				adapter.notifyDataSetChanged();
+				while (xpp.getEventType() != XmlPullParser.END_DOCUMENT) {
+					if (xpp.getEventType() == XmlPullParser.START_TAG)
+						if (xpp.getName().equals(ITEM)) {
+							while (xpp.getEventType() != XmlPullParser.END_DOCUMENT) {
+								if (xpp.getEventType() == XmlPullParser.START_TAG)
+									if (xpp.getName().equals(TITLE)) {
+										while (xpp.getEventType() != XmlPullParser.TEXT)
+											xpp.next();
+										item.add(xpp.getText());
+										break;
+									}
+								xpp.next();
 							}
-						xpp.next();
-					}
-					rssListView.setAdapter(adapter);
-					progressBar.setVisibility(View.INVISIBLE);
-					return;
+						}
+					xpp.next();
 				}
+				rssListView.setAdapter(adapter);
+				progressBar.setVisibility(View.INVISIBLE);
+				return;
+
 			} catch (XmlPullParserException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
@@ -192,6 +193,23 @@ public class MainActivity extends Activity implements
 		}
 
 	};
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.main, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.Update:
+			update();
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
 
 	private void showDescriptionActivity(String data) {
 		Intent showDescriptionIntent = new Intent(MainActivity.this,
