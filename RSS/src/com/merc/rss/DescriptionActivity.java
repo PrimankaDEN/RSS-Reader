@@ -6,7 +6,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.widget.TextView;
 
 public class DescriptionActivity extends ActionBarActivity {
-	public static String DESCRIPTION_TAG = "description";
+	public static final String DESCRIPTION_TAG = "description";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

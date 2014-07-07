@@ -12,7 +12,6 @@ import android.content.AsyncTaskLoader;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
 @SuppressLint("NewApi")
 public class RSSLoader extends AsyncTaskLoader<Bundle> {
@@ -38,7 +37,6 @@ public class RSSLoader extends AsyncTaskLoader<Bundle> {
 		;
 		String feed = null;
 		Log.d(LOG_TAG, urlToDownload);
-		// try {
 		try {
 			URL url = new URL(urlToDownload);
 			HttpURLConnection connection = (HttpURLConnection) url
@@ -61,13 +59,5 @@ public class RSSLoader extends AsyncTaskLoader<Bundle> {
 		}
 		retBundle.putString(URL_TAG, feed);
 		return retBundle;
-	}
-
-	private void viewToast(String message) {
-		CharSequence text = message;
-		int duration = Toast.LENGTH_SHORT;
-
-		Toast toast = Toast.makeText(context, text, duration);
-		toast.show();
 	}
 }

@@ -28,10 +28,12 @@ public class MainActivity extends Activity implements
 	private final int PARSE_PAR = -500;
 	private final int LOADER_ID = 500;
 	private final String IS_LOADED_TAG = "isLoaded";
-	private final String SAVE_TAG = "saving";
+	private final String SAVE_RSS_TAG = "saving";
 	private final String RSS_URL = "http://ria.ru/export/rss2/politics/index.xml";
 	private final String TITLE = "title";
+	private final String LINK = "link";
 	private final String ITEM = "item";
+	private final String DESCRIPTION = "description";
 	private boolean isLoaded = false;
 	private ListView rssListView;
 	private ProgressBar progressBar;
@@ -51,7 +53,7 @@ public class MainActivity extends Activity implements
 		rssFeed = result.getString(RSSLoader.URL_TAG, "");
 		parsingArgument = PARSE_PAR;
 		Handler handler = new Handler();
-		handler.post(FeedProcessing);
+		handler.post(getTitleList);
 	}
 
 	@Override
@@ -69,7 +71,7 @@ public class MainActivity extends Activity implements
 		setContentView(R.layout.activity_main);
 
 		if (savedInstanceState != null) {
-			rssFeed = savedInstanceState.getString(SAVE_TAG, "");
+			rssFeed = savedInstanceState.getString(SAVE_RSS_TAG, "");
 			isLoaded = savedInstanceState.getBoolean(IS_LOADED_TAG, false);
 		}
 		if (!isLoaded)
@@ -77,7 +79,7 @@ public class MainActivity extends Activity implements
 					.forceLoad();
 		else {
 			parsingArgument = PARSE_PAR;
-			new Thread(FeedProcessing).start();
+			new Thread(getTitleList).start();
 		}
 
 		progressBar = (ProgressBar) findViewById(R.id.progressBar);
@@ -90,21 +92,20 @@ public class MainActivity extends Activity implements
 					int position, long id) {
 				progressBar.setVisibility(View.VISIBLE);
 				parsingArgument = position;
-				new Thread(FeedProcessing).start();
+				new Thread(getDescription).start();
 			}
 
 		};
 		rssListView.setOnItemClickListener(listener);
 	}
 
-	Runnable FeedProcessing = new Runnable() {
-
+	Runnable getTitleList = new Runnable() {
 		@Override
 		public void run() {
-			try {
 
-				XmlPullParserFactory factory = XmlPullParserFactory
-						.newInstance();
+			try {
+				XmlPullParserFactory factory;
+				factory = XmlPullParserFactory.newInstance();
 				XmlPullParser xpp = factory.newPullParser();
 				xpp.setInput(new StringReader(rssFeed));
 
@@ -134,33 +135,54 @@ public class MainActivity extends Activity implements
 					rssListView.setAdapter(adapter);
 					progressBar.setVisibility(View.INVISIBLE);
 					return;
-				} else {
-					int iter = 0;
-					String description = "";
-					while (xpp.getEventType() != XmlPullParser.END_DOCUMENT) {
-						if (xpp.getEventType() == XmlPullParser.START_TAG) {
-							if (xpp.getName().equals(ITEM)) {
+				}
+			} catch (XmlPullParserException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	};
 
-								if (iter == parsingArgument) {
-									while (xpp.getEventType() != XmlPullParser.END_DOCUMENT) {
-										if (xpp.getEventType() == XmlPullParser.TEXT) {
-											description += xpp.getText() + "\n";
+	Runnable getDescription = new Runnable() {
+
+		@Override
+		public void run() {
+			try {
+				XmlPullParserFactory factory = XmlPullParserFactory
+						.newInstance();
+				XmlPullParser xpp = factory.newPullParser();
+				xpp.setInput(new StringReader(rssFeed));
+
+				int iter = 0;
+				String description = "";
+				while (xpp.getEventType() != XmlPullParser.END_DOCUMENT) {
+					if (xpp.getEventType() == XmlPullParser.START_TAG) {
+						if (xpp.getName().equals(ITEM)) {
+							if (iter == parsingArgument) {
+								while (xpp.getEventType() != XmlPullParser.END_DOCUMENT) {
+									if (xpp.getEventType() == XmlPullParser.START_TAG)
+										if (xpp.getName().equals(TITLE)
+												|| xpp.getName().equals(LINK)
+												|| xpp.getName().equals(
+														DESCRIPTION)) {
+											xpp.next();
+											description += xpp.getText();
+											description += "\n";
 										}
-										if (xpp.getEventType() == XmlPullParser.END_TAG)
-											if (xpp.getName().equals(ITEM))
-												break;
-										xpp.next();
-									}
-
-									progressBar.setVisibility(View.INVISIBLE);
-									showDescriptionActivity(description);
-									return;
+									if (xpp.getEventType() == XmlPullParser.END_TAG)
+										if (xpp.getName().equals(ITEM))
+											break;
+									xpp.next();
 								}
-								iter++;
+								progressBar.setVisibility(View.INVISIBLE);
+								showDescriptionActivity(description);
+								return;
 							}
+							iter++;
 						}
-						xpp.next();
 					}
+					xpp.next();
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -181,7 +203,7 @@ public class MainActivity extends Activity implements
 
 	@Override
 	protected void onSaveInstanceState(Bundle in) {
-		in.putString(SAVE_TAG, rssFeed);
+		in.putString(SAVE_RSS_TAG, rssFeed);
 		in.putBoolean(IS_LOADED_TAG, isLoaded);
 		super.onSaveInstanceState(in);
 	}
