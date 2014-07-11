@@ -9,4 +9,10 @@
         android:title="@string/action_settings"
         app:showAsAction="never"/>
 
+      <item
+        android:id="@+id/AccountSettings"
+        android:orderInCategory="100"
+        android:title="@string/account_settings"
+        app:showAsAction="never"/>
+      
 </menu>

@@ -13,12 +13,13 @@ private final String LOG_TAG ="AuthenticatorService";
 	public void onCreate() {
 		Log.d(LOG_TAG, "onCreate");
 		super.onCreate();
-		authenticator = new Authenticator(getApplicationContext());
+		
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
 		Log.d(LOG_TAG, "onBind");
+		authenticator = new Authenticator(this);
 		return authenticator.getIBinder();
 	}
 

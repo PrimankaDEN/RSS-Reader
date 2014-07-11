@@ -65,7 +65,6 @@ public class FeedParser {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 		return description;
 	}
 

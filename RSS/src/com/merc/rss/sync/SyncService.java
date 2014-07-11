@@ -6,7 +6,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 public class SyncService extends Service {
-	static private SyncAdapter syncAdapter = null;
+	private SyncAdapter syncAdapter = null;
 	private final String LOG_TAG = "SYNC_SERVICE";
 
 	@Override
@@ -19,9 +19,7 @@ public class SyncService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		Log.d(LOG_TAG, "onCreate");
-		if (syncAdapter == null) {
 			syncAdapter = new SyncAdapter(getApplicationContext(), true);
-		}
+		
 	}
-
 }
